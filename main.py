@@ -1,4 +1,4 @@
-from rubpy.sync import Client, handlers, Message
+from rubpy.sync import Client, handlers, Message,models
 from Advertise import Advertise
 
 
@@ -23,7 +23,7 @@ def check_admins(group_guid ,member_guid : str):
 
 
 with Client(session='Account') as client:
-    @client.on(handlers.MessageUpdates())
+    @client.on(handlers.MessageUpdates(models.is_group))
     def updates(message: Message):
         text = str(message)
 
