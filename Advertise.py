@@ -20,4 +20,6 @@ class Advertise():
             if link in text:
                 return True
 
-
+    def is_media(text : str) -> bool:
+        if 'type": "FileInline' in text:
+            return True
