@@ -2,11 +2,11 @@ from rubpy.sync import Client, handlers, Message, models
 from Advertise import Advertise
 
 
-forward: bool = True
-link: bool = True
-RubinoPost: bool = True
-StoryRubino: bool = True
-
+forward     :bool = True
+link        :bool = True
+RubinoPost  :bool = True
+StoryRubino :bool = True
+media       :bool = False    
 
 def check_admins(group_guid, member_guid: str):
     admins = [i["member_guid"] for i in client.get_group_admin_members(group_guid)[
@@ -18,6 +18,7 @@ def check_admins(group_guid, member_guid: str):
 with Client(session='Account') as client:
     @client.on(handlers.MessageUpdates(models.is_group))
     def updates(message: Message):
+        
         text = str(message)
 
         if Advertise.is_link(text):
@@ -53,12 +54,16 @@ with Client(session='Account') as client:
         elif Advertise.is_StoryRubino(text):
             global StoryRubino
             if StoryRubino == True and not check_admins(message.object_guid, message.author_guid):
-                client.ban_group_member(
-                    message.object_guid, message.author_guid)
-                client.delete_messages(message.object_guid, [
-                                       message.message_id])
-                message.reply(
-                    "کاربر به دلیل ارسال استوری روبینو از گروه اخراج شد 🎊")
+                client.ban_group_member(message.object_guid, message.author_guid)
+                client.delete_messages(message.object_guid, [message.message_id])
+                message.reply("کاربر به دلیل ارسال استوری روبینو از گروه اخراج شد 🎊")
+
+        elif Advertise.is_media(text):
+            global media
+            if media == True and not check_admins(message.object_guid, message.author_guid):
+                client.ban_group_member(message.object_guid, message.author_guid)
+                client.delete_messages(message.object_guid, [message.message_id])
+                message.reply("کاربر به دلیل ارسال مدیا از گروه اخراج شد 🎊")
 
         elif message.raw_text == 'بازکردن فروارد':
             if check_admins(message.object_guid, message.author_guid):
@@ -133,9 +138,27 @@ with Client(session='Account') as client:
                 else:
                     message.reply("قفل استوری روبینو از قبل برداشته شده 🎊")
 
+
+        elif message.raw_text == 'قفل مدیا':
+            if check_admins(message.object_guid, message.author_guid):
+                if media != True:
+                    media = True
+                    message.reply("اوکیه مدیا قفل شد\nعمه هرکی مدیا بفرسته🗿")
+                else:
+                    message.reply("قفل مدیا از قبل تنظیم شده 🎊")
+
+        elif message.raw_text == 'بازکردن مدیا':
+            if check_admins(message.object_guid, message.author_guid):
+                if media != False:
+                    media = False
+                    message.reply("اوکیه قفل مدیا خاموش شد\nدیگه عمه کسی در خطر نیست راحت باشین🗿")
+                else:
+                    message.reply("قفل مدیا از قبل برداشته شده 🎊")
+
+
         elif message.raw_text == 'وضعیت':
             group = client.get_group_info(message.object_guid)
-            message.reply(f"✨ نام گروه : {group.group.group_title} \n\n🏀 تعداد اعضا  : {group.group.count_members}\n\nقفل لینک : {'              ✅' if link else '              ❌'}\n\nقفل فروارد : {'             ✅' if forward else '             ❌'}\n\nقفل پست روبینو : {'    ✅' if RubinoPost else '    ❌'}\n\nقفل استوری روبینو : {' ✅' if StoryRubino else ' ❌'}")
+            message.reply(f"✨ نام گروه : {group.group.group_title} \n\n🏀 تعداد اعضا  : {group.group.count_members}\n\nقفل لینک : {'              ✅' if link else '              ❌'}\n\nقفل فروارد : {'             ✅' if forward else '             ❌'}\n\nقفل پست روبینو : {'    ✅' if RubinoPost else '    ❌'}\n\nقفل استوری روبینو : {' ✅' if StoryRubino else ' ❌'}\n\nقفل مدیا : {'                ✅' if media else '                ❌'}")
 
         elif message.raw_text == "راهنما":
             message.reply(
@@ -152,6 +175,8 @@ with Client(session='Account') as client:
                 else:
                     message.reply("مدیر عزیز شما روی پیامی ریپلای نکردید")
 
+
+
         elif message.raw_text == "افزودن مدیر":
             """
             ['SetAdmin', 'BanMember', 'ChangeInfo', 'PinMessages', 'SetJoinLink', 'SetMemberAccess', 'DeleteGlobalAllMessages']
@@ -166,6 +191,9 @@ with Client(session='Account') as client:
                     message.reply("کاربر با موفقیت ادمین شد 🎊")
                 else:
                     message.reply("کاربر از قبل ادمین میباشد 🎊")
+
+
+
 
         elif message.raw_text == "عذل مدیر":
             if check_admins(message.object_guid, message.author_guid):
