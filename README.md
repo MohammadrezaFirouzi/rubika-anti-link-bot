@@ -16,7 +16,7 @@ python3 main.py
 ## نظر هاتونو باهام اشتراک بزارید ✨
 
 
-* Github : [@MohammadrezaFirouzi](https://github.com/MohammadrezaFirouzi)
+* Github : [MohammadrezaFirouzi](https://github.com/MohammadrezaFirouzi)
 * Telegram : [@Mohammadreza_firouziii](https://t.me/Mohammadreza_firouziii)
 
 
