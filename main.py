@@ -6,7 +6,7 @@ link        :bool = True
 RubinoPost  :bool = True
 StoryRubino :bool = True
 media       :bool = False    
-
+strict_lock :bool = True
 
 class Advertise():
 
@@ -37,10 +37,18 @@ async def check_admins(client,group_guid, member_guid: str):
     admins = [i["member_guid"] for i in data['in_chat_members']]
     if member_guid in admins:
         return True
+    
+
+async def handling(client, group_guid, member_guid, message_id):
+    global strict_lock
+    await client.delete_messages(group_guid, [message_id])
+    if strict_lock == True:
+        await client.ban_group_member(group_guid, member_guid)
+
 
 async def main():
     async with Client(session='Account') as client:
-        @client.on(handlers.MessageUpdates())
+        @client.on(handlers.MessageUpdates(models.is_group))
         async def updates(message: Message):
         
             text = str(message)
@@ -48,45 +56,28 @@ async def main():
             if await Advertise.is_link(text):
                 global link
                 if link == True and not await check_admins(client ,message.object_guid, message.author_guid):
-                    await client.ban_group_member(
-                        message.object_guid, message.author_guid)
-                    await client.delete_messages(message.object_guid, [
-                                        message.message_id])
-                    await message.reply(
-                        "کاربر به دلیل ارسال لینک تبلیغاتی از گروه اخراج شد 🎊")
+                    await handling(client, message.object_guid, message.author_guid,message.message_id)
 
             elif await Advertise.is_forwards(text):
                 global forward
                 if forward == True and not await check_admins(client ,message.object_guid, message.author_guid):
-                    await client.ban_group_member(
-                        message.object_guid, message.author_guid)
-                    await client.delete_messages(message.object_guid, [
-                                        message.message_id])
-                    await message.reply("کاربر به دلیل ارسال پیام فرواردی از گروه اخراج شد 🎊")
+                    await handling(client, message.object_guid, message.author_guid,message.message_id)
 
             elif await Advertise.is_RubinoPost(text):
                 global RubinoPost
                 if RubinoPost == True and not await check_admins(client ,message.object_guid, message.author_guid):
-                    await client.ban_group_member(
-                        message.object_guid, message.author_guid)
-                    await client.delete_messages(message.object_guid, [
-                                        message.message_id])
-                    await message.reply(
-                        "کاربر به دلیل ارسال پست روبینو از گروه اخراج شد 🎊")
+                    await handling(client, message.object_guid, message.author_guid,message.message_id)
+
 
             elif await Advertise.is_StoryRubino(text):
                 global StoryRubino
                 if StoryRubino == True and not await check_admins(client ,message.object_guid, message.author_guid):
-                    await client.ban_group_member(message.object_guid, message.author_guid)
-                    await client.delete_messages(message.object_guid, [message.message_id])
-                    await message.reply("کاربر به دلیل ارسال استوری روبینو از گروه اخراج شد 🎊")
+                    await handling(client, message.object_guid, message.author_guid,message.message_id)
 
             elif await Advertise.is_media(text):
                 global media
                 if media == True and not await check_admins(client ,message.object_guid, message.author_guid):
-                    await client.ban_group_member(message.object_guid, message.author_guid)
-                    await client.delete_messages(message.object_guid, [message.message_id])
-                    await message.reply("کاربر به دلیل ارسال مدیا از گروه اخراج شد 🎊")
+                    await handling(client, message.object_guid, message.author_guid,message.message_id)
 
             elif message.raw_text == 'بازکردن فروارد':
                 if await check_admins(client ,message.object_guid, message.author_guid):
@@ -178,8 +169,25 @@ async def main():
 
 
             elif message.raw_text == 'وضعیت':
+                global strict_lock
                 group = await client.get_group_info(message.object_guid)
-                await message.reply(f"✨ نام گروه : {group.group.group_title} \n\n🏀 تعداد اعضا  : {group.group.count_members}\n\nقفل لینک : {'              ✅' if link else '              ❌'}\n\nقفل فروارد : {'             ✅' if forward else '             ❌'}\n\nقفل پست روبینو : {'    ✅' if RubinoPost else '    ❌'}\n\nقفل استوری روبینو : {' ✅' if StoryRubino else ' ❌'}\n\nقفل مدیا : {'                ✅' if media else '                ❌'}")
+
+                information = f"""╭──────────────╮
+│ {group.group.group_title}           
+├──────────────┤
+│ [📊] GAP
+│    ├[👥] {group.group.count_members} 
+│    ├[🔗] LINK: ({'🟢' if link else '🔴'})
+│    ├[⏩] Forward: ({'🟢' if forward else '🔴'})
+│    └[🎥] Media: ({'🟢' if media else '🔴'})
+│ [📸] RUBINO:
+│    ├[📰] Story: ({'🟢' if StoryRubino else '🔴'})
+│    └[📬] RubinoPost: ({'🟢' if RubinoPost else '🔴'})
+│ [🎛️] SETTING
+│    └[🔐] Hard lock: ({'🟢' if strict_lock else '🔴'})
+└──────────────╯"""
+
+                await message.reply(information)
 
             elif message.raw_text == "راهنما":
                 await message.reply(
@@ -227,9 +235,38 @@ async def main():
                     else:
                         await message.reply("کاربر از قبل ادمین نمی باشد 🎊")
 
+            elif message.raw_text == "قفل سختگیری روشن":
+                if await check_admins(client ,message.object_guid, message.author_guid):
+                    if strict_lock != True:
+                        strict_lock = True
+                        await message.reply("قفل سختگیری روشن شد و در صورت دیدن تبلیغات کاربر از گروه حذف خواهد شد")
+                    else:
+                        await message.reply("قفل سختگیری از قبل روشن است")
+                    
 
-                        
+            elif message.raw_text == "قفل سختگیری خاموش":
+                if strict_lock != False:
+                    strict_lock = False
+                    await message.reply("قفل سختگیری خاموش شد و در صورت دیدن تبلیغات کاربر از گروه حذف نخواهد شد")
+                else:
+                    await message.reply("قفل سختگیری از قبل خاموش است")
 
+            elif message.raw_text == "لینک":
+                try:
+                    ss = await client.get_group_link(message.object_guid)
+                    group = await client.get_group_info(message.object_guid)
+
+                    ifno = f"""╭──────────────╮
+├──┤JOIN LINK! 
+├──────────────┤
+├┤👥│: {group.group.group_title}    
+│    ├┤🔗│: [Link  ]({ss.join_link})  
+│    └┤✔️│: (🟢)
+└──────────────╯"""
+                    await message.reply(ifno)
+                except:
+                    await message.reply('من اینجا ادمین نیستم 🙂')
+                   
         await client.run_until_disconnected()
 
 run(main())
