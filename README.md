@@ -20,3 +20,5 @@ python3 main.py
 * Telegram : [@Mohammadreza_firouziii](https://t.me/Mohammadreza_firouziii)
 
 
+### تشکر از 🥰
+- [LOOPY](https://rubika.ir/LOOPY_INFO)
